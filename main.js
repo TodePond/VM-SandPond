@@ -32,6 +32,36 @@ document.body.appendChild(menu)
 
 let dropperElement = undefined
 
+/*canvas.on.mousedown(e => {
+	const {x, y} = e
+	const space = getSpaceId(x, y)
+	changeSpacePosition(x, y, dropperElement)
+})*/
+
+canvas.on.mousemove(e => {
+	if (Mouse.down) {
+		const {x, y} = e
+		const space = getSpaceId(x, y)
+		changeSpacePosition(x, y, dropperElement)
+	}
+})
+
+const changeSpacePosition = (x, y, element) => {
+	const space = getSpaceId(x, y)
+	spaces[space] = element
+	const colour = loadedElementMetadata[element].FgColor
+	ctx.fillStyle = colour
+	ctx.fillRect(x, y, SPACE_SIZE, SPACE_SIZE)
+}
+
+const changeSpaceId = (space, element) => {
+	spaces[space] = element
+	const [x, y] = getSpacePosition(space)
+	const colour = loadedElementMetadata[element].FgColor
+	ctx.fillStyle = colour
+	ctx.fillRect(x, y, SPACE_SIZE, SPACE_SIZE)
+}
+
 const draw = () => {
 	let x = 0
 	let y = 0
