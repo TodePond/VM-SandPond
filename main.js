@@ -3,7 +3,7 @@
 // Engine //
 //========//
 const TICK_INTERVAL = 100
-const INSTRUCTIONS_PER_TICK = 100
+const PROGRAMS_PER_TICK = 100 // TODO: we should limit instructions, NOT programs
 
 const WORLD_SIZE = 100
 const SPACE_COUNT = WORLD_SIZE * WORLD_SIZE
@@ -11,7 +11,11 @@ const SPACE_SIZE = 8
 
 const spaces = new Uint8Array(SPACE_COUNT)
 
-const $Space = (x, y) => spaces[getSpaceId(x, y)]
+const $Space = (x, y) => {
+	const element = spaces[getSpaceId(x, y)]
+	if (element === undefined) return loadedElementPositions["Void"]
+	return element
+}
 const getSpaceId = (x, y) => y * WORLD_SIZE + x
 const getSpacePosition = (id) => [id % WORLD_SIZE, Math.floor(id / WORLD_SIZE)]
 
@@ -27,7 +31,6 @@ const menu = HTML `<div id="menu"></div>`
 document.body.appendChild(menu)
 
 let dropperElement = undefined
-
 
 const draw = () => {
 	let x = 0
@@ -55,23 +58,86 @@ const randos = new Uint32Array(RANDOM_COUNT)
 let r = RANDOM_COUNT
 
 const update = () => {
-	if (r >= RANDOM_COUNT) {
-		crypto.getRandomValues(randos)
-		r = 0
-	}
 	
 	let i = 0
-	while (i < INSTRUCTIONS_PER_TICK) {
-		i++
+	while (i < PROGRAMS_PER_TICK) {
+	
+		i++ //placeholder - currently limiting program runs per tick, but it SHOULD limit instructions per tick
+		
+		// Get random space ID
+		if (r >= RANDOM_COUNT) {
+			crypto.getRandomValues(randos)
+			r = 0
+		}
 		const id = Math.floor(randos[r] * randoRatio)
 		r++
 		
+		// Get origin element
 		const element = spaces[id]
+		if (element === undefined) print(id, r, randos[r])
 		const program = loadedElementPrograms[element]
 		
-		loadEventWindow(id)
-		run(program)
+		// Fire event
+		const ew = getEventWindow(id)
+		loadedEventWindow = ew
+		//run(program)
+		
 	}
+}
+
+const EVENT_WINDOW = [
+	[0, 0],
+	[-1, 0],
+	[0, -1],
+	[0, 1],
+	[1, 0],
+	[-1, -1],
+	[-1, 1],
+	[1, -1],
+	[1, 1],
+	[-2, 0],
+	[0, -2],
+	[0, 2],
+	[2, 0],
+	[-2, -1],
+	[-2, 1],
+	[-1, -2],
+	[-1, 2],
+	[1, -2],
+	[1, 2],
+	[2, -1],
+	[2, 1],
+	[-3, 0],
+	[0, -3],
+	[0, 3],
+	[3, 0],
+	[-2, -2],
+	[-2, 2],
+	[2, -2],
+	[2, 2],
+	[-3, -1],
+	[-3, 1],
+	[-1, -3],
+	[-1, 3],
+	[1, -3],
+	[1, 3],
+	[3, -1],
+	[3, 1],
+	[-4, 0],
+	[0, -4],
+	[0, 4],
+	[4, 0],
+]
+
+const getEventWindow = (space) => {
+	const ew = []
+	const [x, y] = getSpacePosition(space)
+	for (const [dx, dy] of EVENT_WINDOW) {
+		const [ex, ey] = [x+dx, y+dy]
+		const element = $Space(ex, ey)
+		ew.push(element)
+	}
+	return ew
 }
 
 const tick = () => {
@@ -152,7 +218,7 @@ if (REBUILD) {
 	StringLiteral :: '"' (/[^"]/+)? '"'
 	`
 	cachedMotherTode += "\n" + MotherTode`
-	Symmetry :: "NONE" | "ALL" | "FLIPX" | "NORMAL"
+	Symmetry :: "None" | "All" | "Flip_X" | "Normal"
 	Symmetries :: TwoSymmetries | Symmetry
 	TwoSymmetries :: Symmetry "," [_] Symmetries
 	Site :: "#" IntLiteral
@@ -160,7 +226,7 @@ if (REBUILD) {
 	AbsoluteField :: Register "$" Name
 	RelativeField :: "$" Name
 	Register :: NumberedRegister | NamedRegister
-	NumberedRegister :: "R" IntLiteral >> ([_, n]) => "loadedNumberedRegisters[" + n + "]"
+	NumberedRegister :: "R_" IntLiteral >> ([_, n]) => "loadedNumberedRegisters[" + n + "]"
 	NamedRegister :: "R_SelfRaw" | "R_SelfType" | "R_SelfHeader" | "R_SelfChecksum" | "R_SelfData" | "R_UniformRandom" >> () => { throw new Error("Other registers are not implemented yet") }
 	Name :: /[A-Za-z_]/+
 	Element :: "%" Name >> ([_, n]) => "loadedElementPositions['" + n + "']"
@@ -230,13 +296,6 @@ let loadedElementPrograms = []
 
 let loadedEventWindow = []
 
-const loadEventWindow = (space) => {
-	const [x, y] = getSpacePosition(space)
-	for (let dx = -4; dx < 4; dx++) {
-		
-	}
-}
-
 const menuButtonStyle = HTML `<style>
 	.menuButton {
 		margin: 10px;
@@ -247,7 +306,8 @@ const menuButtonStyle = HTML `<style>
 	}
 	
 	.highlight {
-		background-color: rgb(0, 128, 255);
+		background-color: #fc0;
+		color: black;
 	}
 </style>`
 document.head.appendChild(menuButtonStyle)
@@ -267,9 +327,11 @@ const loadElement = (program) => {
 		dropperElement = id
 	})
 	$("#menu").appendChild(button)
+	if (name === "Sand") {
+		dropperElement = id
+		button.classList.add("highlight")
+	}
 }
-
-
 
 const run = (program, count = 10) => {
 	const {metadata, instructions, numberedRegisters, labelPositions, funcs, instructionPosition, fields} = program
@@ -284,6 +346,7 @@ const run = (program, count = 10) => {
 		loadedInstructionPosition++
 		if (loadedInstructionPosition >= funcs.length) {
 			loadedInstructionPosition = 0
+			break
 			//loadedNumberedRegisters = [0].repeated(16) //Reset numbered registers?
 		}
 	}
