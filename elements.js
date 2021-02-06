@@ -14,6 +14,8 @@ loadElement(Void)
 const Sand = transpile(`
 	.Name Sand
 	.FgColor #fc0
+	
+	Swap #0 #3
 `)
 loadElement(Sand)
 

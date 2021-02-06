@@ -52,7 +52,10 @@ TERM.Value = TERM.list([
 TERM.Destination = TERM.list([
 	TERM.or([
 	TERM.term("Register"),
-	TERM.term("Field")
+	TERM.or([
+	TERM.term("Field"),
+	TERM.term("Site")
+])
 ])
 ])
 TERM.Function = TERM.list([
@@ -459,12 +462,12 @@ TERM.StringLiteral = TERM.list([
 ])
 TERM.Symmetry = TERM.list([
 	TERM.or([
-	TERM.string(`NONE`),
+	TERM.string(`None`),
 	TERM.or([
-	TERM.string(`ALL`),
+	TERM.string(`All`),
 	TERM.or([
-	TERM.string(`FLIPX`),
-	TERM.string(`NORMAL`)
+	TERM.string(`Flip_X`),
+	TERM.string(`Normal`)
 ])
 ])
 ])
@@ -483,10 +486,13 @@ TERM.TwoSymmetries = TERM.list([
 ])),
 	TERM.term("Symmetries")
 ])
-TERM.Site = TERM.list([
+TERM.Site = TERM.emit(
+	TERM.list([
 	TERM.string(`#`),
 	TERM.term("IntLiteral")
-])
+]),
+	([_, n]) => "loadedEventWindow[" + n + "]"
+)
 TERM.Field = TERM.emit(
 	TERM.list([
 	TERM.or([
@@ -513,7 +519,7 @@ TERM.Register = TERM.list([
 ])
 TERM.NumberedRegister = TERM.emit(
 	TERM.list([
-	TERM.string(`R`),
+	TERM.string(`R_`),
 	TERM.term("IntLiteral")
 ]),
 	([_, n]) => "loadedNumberedRegisters[" + n + "]"

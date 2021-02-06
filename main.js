@@ -2,12 +2,11 @@
 //========//
 // Engine //
 //========//
-const TICK_INTERVAL = 100
-const PROGRAMS_PER_TICK = 100 // TODO: we should limit instructions, NOT programs
-
 const WORLD_SIZE = 100
 const SPACE_COUNT = WORLD_SIZE * WORLD_SIZE
 const SPACE_SIZE = 8
+
+const PROGRAMS_PER_TICK = SPACE_COUNT // TODO: we should limit instructions, NOT programs
 
 const spaces = new Uint8Array(SPACE_COUNT)
 
@@ -41,25 +40,18 @@ let dropperElement = undefined
 canvas.on.mousemove(e => {
 	if (Mouse.down) {
 		const {x, y} = e
-		const space = getSpaceId(x, y)
-		changeSpacePosition(x, y, dropperElement)
+		const [sx, sy] = [Math.floor(x / SPACE_SIZE), Math.floor(y / SPACE_SIZE)]
+		changeSpacePosition(sx, sy, dropperElement)
 	}
 })
 
 const changeSpacePosition = (x, y, element) => {
 	const space = getSpaceId(x, y)
+	if (spaces[space] === element) return
 	spaces[space] = element
 	const colour = loadedElementMetadata[element].FgColor
 	ctx.fillStyle = colour
-	ctx.fillRect(x, y, SPACE_SIZE, SPACE_SIZE)
-}
-
-const changeSpaceId = (space, element) => {
-	spaces[space] = element
-	const [x, y] = getSpacePosition(space)
-	const colour = loadedElementMetadata[element].FgColor
-	ctx.fillStyle = colour
-	ctx.fillRect(x, y, SPACE_SIZE, SPACE_SIZE)
+	ctx.fillRect(x * SPACE_SIZE, y * SPACE_SIZE, SPACE_SIZE, SPACE_SIZE)
 }
 
 const draw = () => {
@@ -104,13 +96,14 @@ const update = () => {
 		
 		// Get origin element
 		const element = spaces[id]
-		if (element === undefined) print(id, r, randos[r])
 		const program = loadedElementPrograms[element]
 		
 		// Fire event
 		const ew = getEventWindow(id)
 		loadedEventWindow = ew
-		//run(program)
+		run(program, Infinity)
+		
+		setEventWindow(id, ew)
 		
 	}
 }
@@ -170,9 +163,18 @@ const getEventWindow = (space) => {
 	return ew
 }
 
+const setEventWindow = (space, ew) => {
+	const [x, y] = getSpacePosition(space)
+	for (const [dx, dy] of EVENT_WINDOW) {
+		const [ex, ey] = [x+dx, y+dy]
+		const element = ew.shift(ew)
+		changeSpacePosition(ex, ey, element)
+	}
+}
+
 const tick = () => {
 	update()
-	setTimeout(tick, TICK_INTERVAL)
+	requestAnimationFrame(tick)
 }
 
 const start = () => {
@@ -192,7 +194,7 @@ if (REBUILD) {
 	Line :: [_] Instruction [_] EOF >> ([_, i]) => i.output
 	Instruction :: Label | JumpFunction | Print | HeaderDeclaration | Function
 	Value :: UInt | SInt | Binary | String | Field | Register | Element
-	Destination :: Register | Field
+	Destination :: Register | Field | Site
 	`
 
 	cachedMotherTode += "\n" + MotherTode `
@@ -251,7 +253,7 @@ if (REBUILD) {
 	Symmetry :: "None" | "All" | "Flip_X" | "Normal"
 	Symmetries :: TwoSymmetries | Symmetry
 	TwoSymmetries :: Symmetry "," [_] Symmetries
-	Site :: "#" IntLiteral
+	Site :: "#" IntLiteral >> ([_, n]) => "loadedEventWindow[" + n + "]"
 	Field :: AbsoluteField | RelativeField >> () => { throw new Error("Accessing fields is unimplemented because I don't understand it yet") }
 	AbsoluteField :: Register "$" Name
 	RelativeField :: "$" Name
@@ -381,9 +383,12 @@ const run = (program, count = 10) => {
 		}
 	}
 	
-	program.instructionPosition = loadedInstructionPosition
-	program.fields = loadedFields
-	program.numberedRegisters = loadedNumberedRegisters
+	program.instructionPosition = 0
+	program.numberedRegisters = [0].repeated(16)
+	
+	//program.instructionPosition = loadedInstructionPosition
+	//program.fields = loadedFields
+	//program.numberedRegisters = loadedNumberedRegisters
 	
 }
 
@@ -417,10 +422,10 @@ const tinker = () => {
 	run(hello)
 	
 	const reg = transpile(`
-		Copy R0 1
+		Copy R_0 1
 		loop:
-			Add R0 R0 R0
-			Print R0
+			Add R_0 R_0 R_0
+			Print R_0
 			Nop
 			Jmp loop
 	`)
@@ -441,13 +446,13 @@ const tinker = () => {
 	run(sandy)
 	
 	const swapper = transpile(`
-		Copy R0 2
-		Copy R1 3
+		Copy R_0 2
+		Copy R_1 3
 		loop:
-			Swap R0 R1
+			Swap R_0 R_1
 			Print "Swapped"
-			Print R0
-			Print R1
+			Print R_0
+			Print R_1
 			Jmp loop
 	`)
 	print(swapper.instructions)
