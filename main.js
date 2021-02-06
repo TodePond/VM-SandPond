@@ -89,6 +89,7 @@ const run = (program, count = INSTRUCTIONS_PER_TICK) => {
 	loadedInstructionPosition = instructionPosition
 	for (let i = 0; i < count; i++) {
 		const func = funcs[loadedInstructionPosition].d
+		func()
 		loadedInstructionPosition++
 		if (loadedInstructionPosition >= funcs.length) loadedInstructionPosition = 0
 	}
@@ -111,7 +112,7 @@ const test = () => {
 		Jmp loop
 	`).d
 	
-	run(p)
+	run(program)
 
 
 }
