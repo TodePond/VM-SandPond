@@ -37,8 +37,15 @@ const stripComments = (source) => source.split("\n").map(line => line.split("//"
 
 MotherTode `
 Line :: [_] Instruction [_] EOF >> ([_, i]) => i.output
-Instruction :: Label | Jump | Print | FieldDeclaration
-Value :: UInt | SInt | Binary | String | Field
+Instruction :: Label | Jump | Print | FieldDeclaration | Function
+Value :: UInt | SInt | Binary | String | Field | Register
+Destination :: Register | Field
+`
+
+MotherTode `
+Function :: Copy | Add
+Copy :: "Copy" [_] Destination [_] Value >> ([c, g1, l, g2, v]) => l + " = " + v
+Add :: "Add" [_] Destination [_] Value [_] Value >> ([a, g1, dst, g2, lhs, g3, rhs]) => dst + " = " + lhs + " + " + rhs
 `
 
 MotherTode `
@@ -64,17 +71,19 @@ StringLiteral :: '"' (/[^"]/+)? '"'
 MotherTode`
 Symmetry :: "NONE" | "ALL" | "FLIPX"
 Site :: "#" IntLiteral
-Field :: AbsoluteField | RelativeField
+Field :: AbsoluteField | RelativeField >> () => { throw new Error("Accessing fields is unimplemented because I don't understand it yet") }
 AbsoluteField :: Register "$" Name
-RelativeField :: "$" Name >> ([_, name]) => currentFields[name]
-Register :: "R_SelfRaw" | "R_SelfType" | "R_SelfHeader" | "R_SelfChecksum" | "R_SelfData" | "R_UniformRandom" | ("R" IntLiteral)
+RelativeField :: "$" Name
+Register :: NumberedRegister | NamedRegister
+NumberedRegister :: "R" IntLiteral >> ([_, n]) => "loadedNumberedRegisters[" + n + "]"
+NamedRegister :: "R_SelfRaw" | "R_SelfType" | "R_SelfHeader" | "R_SelfChecksum" | "R_SelfData" | "R_UniformRandom" >> () => { throw new Error("Other registers are not implemented yet") }
 Name :: /[a-z_]/+
 `
 
 MotherTode `
 FieldDeclaration (
 	:: ".Field" [_] Name [_] [Value] 
-	>> (decl) => { currentFields[decl[2]] = decl[4].output; return ""; }
+	>> () => { throw new Error("Declaring fields is unimplemented because I don't understand it yet") }
 )
 `
 
@@ -104,8 +113,9 @@ const transpile = (source) => {
 	const labelPositions = {...currentLabelPositions}
 	const fields = {...currentFields}
 	const funcs = instructions.map(instruction => new Function(instruction))
+	const numberedRegisters = [0].repeated(16)
 	
-	return {instructions, fields, funcs, labelPositions, instructionPosition: 0}
+	return {numberedRegisters, instructions, fields, funcs, labelPositions, instructionPosition: 0}
 }
 
 
@@ -117,22 +127,28 @@ let loadedInstructions = []
 let loadedLabelPositions = {}
 let loadedFields = {}
 let loadedInstructionPosition = 0
+let loadedNumberedRegisters = [0].repeated(16)
 
 const run = (program, count = INSTRUCTIONS_PER_TICK) => {
-	const {instructions, labelPositions, funcs, instructionPosition, fields} = program
+	const {instructions, numberedRegisters, labelPositions, funcs, instructionPosition, fields} = program
 	loadedInstructions = instructions
 	loadedLabelPositions = labelPositions
 	loadedInstructionPosition = instructionPosition
 	loadedFields = fields
+	loadedNumberedRegisters = numberedRegisters
 	for (let i = 0; i < count; i++) {
 		const func = funcs[loadedInstructionPosition]
 		func()
 		loadedInstructionPosition++
-		if (loadedInstructionPosition >= funcs.length) loadedInstructionPosition = 0
+		if (loadedInstructionPosition >= funcs.length) {
+			loadedInstructionPosition = 0
+			//loadedNumberedRegisters = [0].repeated(16) //Reset numbered registers?
+		}
 	}
 	
 	program.instructionPosition = loadedInstructionPosition
 	program.fields = loadedFields
+	program.numberedRegisters = loadedNumberedRegisters
 	
 }
 
@@ -150,10 +166,12 @@ const test = () => {
 	TERM.Symmetry("ALL").d
 	TERM.Site("#0").d
 	TERM.Site("#1").d
-	TERM.Field("$active_count").d
-	TERM.Field("R_SelfData$active_count").d
-	TERM.FieldDeclaration(".Field active_count").d
-	TERM.FieldDeclaration(".Field is_active 1").d
+	//TERM.Field("$active_count").d
+	//TERM.Field("R_SelfData$active_count").d
+	//TERM.FieldDeclaration(".Field active_count").d
+	//TERM.FieldDeclaration(".Field is_active 1").d
+	
+	TERM.Site("#2").d
 
 	const hello = transpile(`
 		loop:
@@ -163,12 +181,15 @@ const test = () => {
 	print(hello.instructions)
 	run(hello)
 	
-	const fielder = transpile(`
-		.Field meaning_of_life 42
-		Print $meaning_of_life
+	const reg = transpile(`
+		Copy R0 1
+		loop:
+			Add R0 R0 R0
+			Print R0
+			Jmp loop
 	`)
-	print(fielder.instructions)
-	run(fielder)
+	print(reg.instructions)
+	run(reg)
 
 
 }
