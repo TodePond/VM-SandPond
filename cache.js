@@ -569,7 +569,7 @@ TERM.MetadataDeclaration = TERM.emit(
 ])
 ])
 ]),
-	([_, name, g, value]) => { currentMetadata[name] = value; return ""; }
+	([_, name, g, value]) => { currentMetadata[name] = value.output; return ""; }
 )
 TERM.Text = TERM.list([
 	TERM.many(TERM.regexp(/[^\n]/))

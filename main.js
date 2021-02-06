@@ -2,32 +2,87 @@
 //========//
 // Engine //
 //========//
-const TICK_INTERVAL = 200
-const INSTRUCTIONS_PER_TICK = 10
+const TICK_INTERVAL = 100
+const INSTRUCTIONS_PER_TICK = 100
+
+const WORLD_SIZE = 100
+const SPACE_COUNT = WORLD_SIZE * WORLD_SIZE
+const SPACE_SIZE = 8
+
+const spaces = new Uint8Array(SPACE_COUNT)
+
+const $Space = (x, y) => spaces[getSpaceId(x, y)]
+const getSpaceId = (x, y) => y * WORLD_SIZE + x
+const getSpacePosition = (id) => [id % WORLD_SIZE, Math.floor(id / WORLD_SIZE)]
 
 const canvas = HTML `<canvas></canvas>`
 document.body.appendChild(canvas)
 document.body.style["margin"] = 0
-canvas.width = innerWidth
-canvas.height = innerHeight
+document.body.style["background-color"] = "rgb(13, 16, 23)"
+canvas.width = WORLD_SIZE * SPACE_SIZE
+canvas.height = WORLD_SIZE * SPACE_SIZE
 const ctx = canvas.getContext("2d")
+
+const menu = HTML `<div id="menu"></div>`
+document.body.appendChild(menu)
+
+let dropperElement = undefined
 
 
 const draw = () => {
-	throw new Error("Unimplemented")
+	let x = 0
+	let y = 0
+	for (let i = 0; i < SPACE_COUNT; i++) {
+		const element = spaces[i]
+		const [cx, cy] = [x * SPACE_SIZE, y * SPACE_SIZE]
+		
+		const colour = loadedElementMetadata[element].FgColor
+		ctx.fillStyle = colour
+		ctx.fillRect(cx, cy, SPACE_SIZE, SPACE_SIZE)
+		
+		x++
+		if (x >= WORLD_SIZE) {
+			x = 0
+			y++
+		}
+	}
 }
 
+
+const randoRatio = (1 / 2**32) * SPACE_COUNT
+const RANDOM_COUNT = 16384
+const randos = new Uint32Array(RANDOM_COUNT)
+let r = RANDOM_COUNT
+
 const update = () => {
-	throw new Error("Unimplemented")
+	if (r >= RANDOM_COUNT) {
+		crypto.getRandomValues(randos)
+		r = 0
+	}
+	
+	let i = 0
+	while (i < INSTRUCTIONS_PER_TICK) {
+		i++
+		const id = Math.floor(randos[r] * randoRatio)
+		r++
+		
+		const element = spaces[id]
+		const program = loadedElementPrograms[element]
+		
+		loadEventWindow(id)
+		run(program)
+	}
 }
 
 const tick = () => {
 	update()
-	draw()
 	setTimeout(tick, TICK_INTERVAL)
 }
 
-//tick()
+const start = () => {
+	draw()
+	tick()
+}
 
 //===========//
 // Transpile //
@@ -113,7 +168,7 @@ if (REBUILD) {
 
 	cachedMotherTode += "\n" + MotherTode `
 	HeaderDeclaration :: FieldDeclaration | MetadataDeclaration
-	MetadataDeclaration :: "." Name [_] (Value | Text) >> ([_, name, g, value]) => { currentMetadata[name] = value; return ""; }
+	MetadataDeclaration :: "." Name [_] (Value | Text) >> ([_, name, g, value]) => { currentMetadata[name] = value.output; return ""; }
 	Text :: /[^\\n]/+
 	FieldDeclaration (
 		:: ".Field" [_] Name [_] [Value] 
@@ -167,14 +222,56 @@ let loadedLabelPositions = {}
 let loadedFields = {}
 let loadedInstructionPosition = 0
 let loadedNumberedRegisters = [0].repeated(16)
-let loadedElementPositions = {Empty: 0}
-let loadedElements = ["Empty"]
 
-const loadElement = (program) => {
-	
+let loadedElementPositions = {}
+let loadedElements = []
+let loadedElementMetadata = []
+let loadedElementPrograms = []
+
+let loadedEventWindow = []
+
+const loadEventWindow = (space) => {
+	const [x, y] = getSpacePosition(space)
+	for (let dx = -4; dx < 4; dx++) {
+		
+	}
 }
 
-const run = (program, count = INSTRUCTIONS_PER_TICK) => {
+const menuButtonStyle = HTML `<style>
+	.menuButton {
+		margin: 10px;
+		display: inline-block;
+		padding: 10px;
+		color: white;
+		font-family: Rosario;
+	}
+	
+	.highlight {
+		background-color: rgb(0, 128, 255);
+	}
+</style>`
+document.head.appendChild(menuButtonStyle)
+
+const loadElement = (program) => {
+	const {metadata} = program
+	const name = metadata.Name
+	if (name === undefined) throw new Error("Elements need to have a 'Name' property.")
+	const id = loadedElements.push(name) - 1
+	loadedElementPositions[name] = id
+	loadedElementMetadata[id] = {...metadata}
+	loadedElementPrograms[id] = program
+	const button = HTML `<div class='menuButton'>${name}</div>`
+	button.on.click(() => {
+		$$(".menuButton").forEach(e => e.classList.remove("highlight"))
+		button.classList.add("highlight")
+		dropperElement = id
+	})
+	$("#menu").appendChild(button)
+}
+
+
+
+const run = (program, count = 10) => {
 	const {metadata, instructions, numberedRegisters, labelPositions, funcs, instructionPosition, fields} = program
 	loadedInstructions = instructions
 	loadedLabelPositions = labelPositions
@@ -267,4 +364,4 @@ const tinker = () => {
 	
 }
 
-tinker()
+//tinker()
