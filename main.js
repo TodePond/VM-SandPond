@@ -193,7 +193,7 @@ if (REBUILD) {
 	cachedMotherTode += "\n" + MotherTode `
 	Line :: [_] Instruction [_] EOF >> ([_, i]) => i.output
 	Instruction :: Label | JumpFunction | Print | HeaderDeclaration | Function
-	Value :: UInt | SInt | Binary | String | Field | Register | Element
+	Value :: UInt | SInt | Binary | String | Field | Register | Element | Site
 	Destination :: Register | Field | Site
 	`
 
@@ -203,11 +203,11 @@ if (REBUILD) {
 	Add :: "Add" [_] Destination [_] Value [_] Value >> ([a, g1, dst, g2, lhs, g3, rhs]) => dst + " = " + lhs + " + " + rhs
 	Sub :: "Sub" [_] Destination [_] Value [_] Value >> ([a, g1, dst, g2, lhs, g3, rhs]) => dst + " = " + lhs + " - " + rhs
 	Mul :: "Mul" [_] Destination [_] Value [_] Value >> ([a, g1, dst, g2, lhs, g3, rhs]) => dst + " = " + lhs + " * " + rhs
-	Equal :: "Equal" [_] Destination [_] Value [_] Value >> ([a, g1, dst, g2, lhs, g3, rhs]) => dst + " = parseInt(" + lhs + " == " + rhs + ")"
+	Equal :: "Equal" [_] Destination [_] Value [_] Value >> ([a, g1, dst, g2, lhs, g3, rhs]) => dst + " = Number(" + lhs + " == " + rhs + ")"
 	Or :: "Or" [_] Destination [_] Value [_] Value >> ([a, g1, dst, g2, lhs, g3, rhs]) => dst + " = " + lhs + " || " + rhs
 	And :: "And" [_] Destination [_] Value [_] Value >> ([a, g1, dst, g2, lhs, g3, rhs]) => dst + " = " + lhs + " && " + rhs
 	Negate :: "Negate" [_] Destination [_] Value >> ([c, g1, l, g2, v]) => l + " = -" + v
-	Not :: "Not" [_] Destination [_] Value >> ([c, g1, l, g2, v]) => l + " = parseInt(!" + v + ")"
+	Not :: "Not" [_] Destination [_] Value >> ([c, g1, l, g2, v]) => l + " = Number(!" + v + ")"
 	Nop :: "Nop" >> () => ""
 	Exit :: "Exit" >> () => "loadedInstructionPosition = loadedInstructions.length"
 	Swap (
@@ -223,7 +223,7 @@ if (REBUILD) {
 	// TODO: Bitwise funcs and SPLAT funcs
 
 	cachedMotherTode += "\n" + MotherTode `
-	JumpFunction :: Jump | Jmp | JumpRelativeOffset | JumpZero | JumpNonZero | JumpLessThanZero | JumpGreaterThanZero
+	JumpFunction :: Jmp | JumpRelativeOffset | JumpZero | JumpNonZero | JumpLessThanZero | JumpGreaterThanZero | Jump
 	Label (
 		:: Name ":"
 		>> (label) => { currentLabelPositions[label[0]] = currentPosition; return "// " + label[0]; }
@@ -266,7 +266,7 @@ if (REBUILD) {
 
 	cachedMotherTode += "\n" + MotherTode `
 	HeaderDeclaration :: FieldDeclaration | MetadataDeclaration
-	MetadataDeclaration :: "." Name [_] (Value | Text) >> ([_, name, g, value]) => { currentMetadata[name] = value.output; return ""; }
+	MetadataDeclaration :: "." Name [_] Text >> ([_, name, g, value]) => { currentMetadata[name] = value.output; return ""; }
 	Text :: /[^\\n]/+
 	FieldDeclaration (
 		:: ".Field" [_] Name [_] [Value] 
@@ -384,7 +384,7 @@ const run = (program, count = 10) => {
 	}
 	
 	program.instructionPosition = 0
-	program.numberedRegisters = [0].repeated(16)
+	//program.numberedRegisters = [0].repeated(16)
 	
 	//program.instructionPosition = loadedInstructionPosition
 	//program.fields = loadedFields

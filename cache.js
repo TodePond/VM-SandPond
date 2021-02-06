@@ -41,7 +41,10 @@ TERM.Value = TERM.list([
 	TERM.term("Field"),
 	TERM.or([
 	TERM.term("Register"),
-	TERM.term("Element")
+	TERM.or([
+	TERM.term("Element"),
+	TERM.term("Site")
+])
 ])
 ])
 ])
@@ -181,7 +184,7 @@ TERM.Equal = TERM.emit(
 ])),
 	TERM.term("Value")
 ]),
-	([a, g1, dst, g2, lhs, g3, rhs]) => dst + " = parseInt(" + lhs + " == " + rhs + ")"
+	([a, g1, dst, g2, lhs, g3, rhs]) => dst + " = Number(" + lhs + " == " + rhs + ")"
 )
 TERM.Or = TERM.emit(
 	TERM.list([
@@ -245,7 +248,7 @@ TERM.Not = TERM.emit(
 ])),
 	TERM.term("Value")
 ]),
-	([c, g1, l, g2, v]) => l + " = parseInt(!" + v + ")"
+	([c, g1, l, g2, v]) => l + " = Number(!" + v + ")"
 )
 TERM.Nop = TERM.emit(
 	TERM.list([
@@ -289,8 +292,6 @@ TERM.Compare = TERM.emit(
 )
 TERM.JumpFunction = TERM.list([
 	TERM.or([
-	TERM.term("Jump"),
-	TERM.or([
 	TERM.term("Jmp"),
 	TERM.or([
 	TERM.term("JumpRelativeOffset"),
@@ -300,7 +301,9 @@ TERM.JumpFunction = TERM.list([
 	TERM.term("JumpNonZero"),
 	TERM.or([
 	TERM.term("JumpLessThanZero"),
-	TERM.term("JumpGreaterThanZero")
+	TERM.or([
+	TERM.term("JumpGreaterThanZero"),
+	TERM.term("Jump")
 ])
 ])
 ])
@@ -568,12 +571,7 @@ TERM.MetadataDeclaration = TERM.emit(
 	TERM.maybe(TERM.list([
 	TERM.gap
 ])),
-	TERM.list([
-	TERM.or([
-	TERM.term("Value"),
 	TERM.term("Text")
-])
-])
 ]),
 	([_, name, g, value]) => { currentMetadata[name] = value.output; return ""; }
 )
