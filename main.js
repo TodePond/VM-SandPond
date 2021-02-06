@@ -18,9 +18,7 @@ const draw = () => {
 }
 
 const update = () => {
-	for (let i = 0; i < INSTRUCTIONS_PER_TICK; i++) {
-		throw new Error("Unimplemented")
-	}
+	throw new Error("Unimplemented")
 }
 
 const tick = () => {
@@ -36,7 +34,7 @@ const tick = () => {
 //===========//
 const stripComments = (source) => source.split("\n").map(line => line.split("//")[0]).filter(line => !line.is(WhiteSpace)).join("\n")
 
-const labelPositions = {}
+const currentLabelPositions = {}
 let currentPosition = 0
 
 MotherTode `
@@ -45,19 +43,18 @@ Instruction :: Label | Jump
 
 Label (
 	:: LabelName ":"
-	>> (label) => { labelPositions[label[0]] = currentPosition; return "// " + label[0]; }
+	>> (label) => { currentLabelPositions[label[0]] = currentPosition; return "// " + label[0]; }
 )
 LabelName :: /[a-z]/+
 
-Jump :: "Jmp" [_] LabelName >> ([j, _, l]) => "instructionPosition = getLabelPosition('" + l + "')"
+Jump :: "Jmp" [_] LabelName >> ([j, _, l]) => "loadedInstructionPosition = loadedLabelPositions['" + l + "']"
 
 UInt :: IntLiteral | UIntLiteral
 IntLiteral :: /[1-9]/ (/[0-9]/+)?
 UIntLiteral :: IntLiteral "u"
 `
 
-
-
+// Returns a 'program' object
 const transpile = (source) => {
 	const strippedSource = stripComments(source)
 	const lines = strippedSource.split("\n")
@@ -70,7 +67,10 @@ const transpile = (source) => {
 		instructions.push(instruction)
 	}
 	
-	return instructions
+	const labelPositions = {...currentLabelPositions}
+	const funcs = instructions.map(instruction => new Function(instruction))
+	
+	return {instructions, funcs, labelPositions, instructionPosition: 0}
 }
 
 
@@ -78,13 +78,24 @@ const transpile = (source) => {
 //==========//
 // Run-Time //
 //==========//
-const instructions = []
-const getLabelPosition = (name) => {
-	if (name === "exit") return instructions.length
-	return labelPositions[name]
+let loadedInstructions = []
+let loadedLabelPositions = {}
+let loadedInstructionPosition = 0
+
+const run = (program, count = INSTRUCTIONS_PER_TICK) => {
+	const {instructions, labelPositions, funcs, instructionPosition} = program
+	loadedInstructions = instructions
+	loadedLabelPositions = labelPositions
+	loadedInstructionPosition = instructionPosition
+	for (let i = 0; i < count; i++) {
+		const func = funcs[loadedInstructionPosition].d
+		loadedInstructionPosition++
+		if (loadedInstructionPosition >= funcs.length) loadedInstructionPosition = 0
+	}
+	
+	program.instructionPosition = loadedInstructionPosition
 }
 
-let instructionPosition = 0
 
 //========//
 // Tinker //
@@ -95,10 +106,12 @@ const test = () => {
 	TERM.Label("loop:").d
 	TERM.Jump("Jmp loop").d
 
-	transpile(`
+	const program = transpile(`
 		loop:
 		Jmp loop
 	`).d
+	
+	run(p)
 
 
 }
