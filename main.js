@@ -1,4 +1,7 @@
 
+//========//
+// Engine //
+//========//
 const TICK_INTERVAL = 200
 const INSTRUCTIONS_PER_TICK = 10
 
@@ -28,4 +31,30 @@ const tick = () => {
 
 //tick()
 
+//===========//
+// Transpile //
+//===========//
+MotherTode `
+Label :: LabelName ":"
+LabelName :: /[a-z]/+
 
+Jump :: "Jmp" [_] LabelName >> ([j, _, l]) => "instructionPosition = getLabelPosition('" + l + "')"
+
+UInt :: IntLiteral | UIntLiteral
+IntLiteral :: /[1-9]/ (/[0-9]/+)?
+UIntLiteral :: IntLiteral "u"
+`
+
+const test = () => {
+	TERM.IntLiteral("5").d
+	TERM.UIntLiteral("5u").d
+	TERM.Label("loop:").d
+	TERM.Jump("Jmp loop").d
+}
+
+test()
+
+//==========//
+// Run-Time //
+//==========//
+let instructionPosition = 0
