@@ -335,10 +335,11 @@ const menuButtonStyle = HTML `<style>
 		padding: 10px;
 		color: white;
 		font-family: Rosario;
+		cursor: pointer;
 	}
 	
 	.highlight {
-		background-color: #fc0;
+		background-color: white;
 		color: black;
 	}
 </style>`
