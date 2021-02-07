@@ -226,9 +226,19 @@ const setEventWindow = (space, ew, map = EVENT_WINDOW) => {
 }
 
 const tick = () => {
-	if (Mouse.down || Touches.length > 0) {
-		const [sx, sy] = [Math.floor(dropperX / SPACE_SIZE), Math.floor(dropperY / SPACE_SIZE)]
-		if (dropperElement !== undefined) changeSpacePosition(sx, sy, dropperElement)
+	if ((canvas.matches("canvas:active") && Mouse.down) || Touches.length > 0) {
+		if (Touches.length > 0) {
+			const touch = Touches[0]
+			if (touch.x > WORLD_SIZE * SPACE_SIZE || touch.y > WORLD_SIZE * SPACE_SIZE) {}
+			else {
+				const [sx, sy] = [Math.floor(dropperX / SPACE_SIZE), Math.floor(dropperY / SPACE_SIZE)]
+				if (dropperElement !== undefined) changeSpacePosition(sx, sy, dropperElement)
+			}
+		}
+		else {
+			const [sx, sy] = [Math.floor(dropperX / SPACE_SIZE), Math.floor(dropperY / SPACE_SIZE)]
+			if (dropperElement !== undefined) changeSpacePosition(sx, sy, dropperElement)
+		}
 	}
 	update()
 	requestAnimationFrame(tick)
