@@ -14,7 +14,7 @@ loadElement(Void)
 const Sand = transpile(`
 	.Name Sand
 	.FgColor #fc0
-	.Symmetries Normal
+	.Symmetries Normal, Flip_X
 	
 	fall:
 		Equal R_0 #3 %Empty
@@ -39,10 +39,20 @@ loadElement(Sand)
 const Water = transpile(`
 	.Name Water
 	.FgColor #08f
+	.Symmetries Normal, Flip_X
 	
-	Equal R_0 #1 %Empty
-	JumpZero exit R_0
-	Swap #0 #1
+	fall:
+		Equal R_0 #3 %Empty
+		JumpZero slide R_0
+			Swap #0 #3
+			Exit
+	
+	slide:
+		Equal R_0 #4 %Empty
+		JumpZero exit R_0
+			Swap #0 #4
+			Exit
+	
 	exit:
 `)
 loadElement(Water)
