@@ -48,6 +48,18 @@ canvas.on.mousemove(e => {
 	;[dropperX, dropperY] = [e.offsetX, e.offsetY]
 })
 
+canvas.on.touchstart(e => {
+	const touch = e.changedTouches[0]
+	;[dropperX, dropperY] = [touch.clientX + scrollX, touch.clientY + scrollY]
+	e.preventDefault()
+})
+
+canvas.on.touchmove(e => {
+	const touch = e.changedTouches[0]
+	;[dropperX, dropperY] = [touch.clientX + scrollX, touch.clientY + scrollY]
+	e.preventDefault()
+})
+
 const changeSpacePosition = (x, y, element) => {
 	const space = getSpaceId(x, y)
 	if (spaces[space] === element) return
@@ -176,7 +188,7 @@ const setEventWindow = (space, ew) => {
 }
 
 const tick = () => {
-	if (Mouse.down) {
+	if (Mouse.down || Touches.length > 0) {
 		const [sx, sy] = [Math.floor(dropperX / SPACE_SIZE), Math.floor(dropperY / SPACE_SIZE)]
 		changeSpacePosition(sx, sy, dropperElement)
 	}
