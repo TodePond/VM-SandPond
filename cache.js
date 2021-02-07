@@ -475,12 +475,15 @@ TERM.Symmetry = TERM.list([
 ])
 ])
 ])
-TERM.Symmetries = TERM.list([
+TERM.Symmetries = TERM.emit(
+	TERM.list([
 	TERM.or([
 	TERM.term("TwoSymmetries"),
 	TERM.term("Symmetry")
 ])
-])
+]),
+	(ss) => ss.output.split(",").map(s => s.trim())
+)
 TERM.TwoSymmetries = TERM.list([
 	TERM.term("Symmetry"),
 	TERM.string(`,`),
@@ -571,7 +574,12 @@ TERM.MetadataDeclaration = TERM.emit(
 	TERM.maybe(TERM.list([
 	TERM.gap
 ])),
+	TERM.list([
+	TERM.or([
+	TERM.term("Symmetries"),
 	TERM.term("Text")
+])
+])
 ]),
 	([_, name, g, value]) => { currentMetadata[name] = value.output; return ""; }
 )

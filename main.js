@@ -28,6 +28,10 @@ const ctx = canvas.getContext("2d")
 
 const menu = HTML `<div id="menu"></div>`
 document.body.appendChild(menu)
+const codeDisplay = HTML `<pre id="code"></pre>`
+codeDisplay.style["color"] = "white"
+codeDisplay.style["font-family"] = "UbuntuMono"
+document.body.appendChild(codeDisplay)
 
 let dropperElement = undefined
 
@@ -37,12 +41,11 @@ let dropperElement = undefined
 	changeSpacePosition(x, y, dropperElement)
 })*/
 
+let dropperX = undefined
+let dropperY = undefined
+
 canvas.on.mousemove(e => {
-	if (Mouse.down) {
-		const {x, y} = e
-		const [sx, sy] = [Math.floor(x / SPACE_SIZE), Math.floor(y / SPACE_SIZE)]
-		changeSpacePosition(sx, sy, dropperElement)
-	}
+	;[dropperX, dropperY] = [e.offsetX, e.offsetY]
 })
 
 const changeSpacePosition = (x, y, element) => {
@@ -173,6 +176,10 @@ const setEventWindow = (space, ew) => {
 }
 
 const tick = () => {
+	if (Mouse.down) {
+		const [sx, sy] = [Math.floor(dropperX / SPACE_SIZE), Math.floor(dropperY / SPACE_SIZE)]
+		changeSpacePosition(sx, sy, dropperElement)
+	}
 	update()
 	requestAnimationFrame(tick)
 }
@@ -251,7 +258,7 @@ if (REBUILD) {
 	`
 	cachedMotherTode += "\n" + MotherTode`
 	Symmetry :: "None" | "All" | "Flip_X" | "Normal"
-	Symmetries :: TwoSymmetries | Symmetry
+	Symmetries :: TwoSymmetries | Symmetry >> (ss) => ss.output.split(",").map(s => s.trim())
 	TwoSymmetries :: Symmetry "," [_] Symmetries
 	Site :: "#" IntLiteral >> ([_, n]) => "loadedEventWindow[" + n + "]"
 	Field :: AbsoluteField | RelativeField >> () => { throw new Error("Accessing fields is unimplemented because I don't understand it yet") }
@@ -266,7 +273,7 @@ if (REBUILD) {
 
 	cachedMotherTode += "\n" + MotherTode `
 	HeaderDeclaration :: FieldDeclaration | MetadataDeclaration
-	MetadataDeclaration :: "." Name [_] Text >> ([_, name, g, value]) => { currentMetadata[name] = value.output; return ""; }
+	MetadataDeclaration :: "." Name [_] (Symmetries | Text) >> ([_, name, g, value]) => { currentMetadata[name] = value.output; return ""; }
 	Text :: /[^\\n]/+
 	FieldDeclaration (
 		:: ".Field" [_] Name [_] [Value] 
@@ -309,7 +316,7 @@ const transpile = (source) => {
 	const funcs = instructions.map(instruction => new Function(instruction))
 	const numberedRegisters = [0].repeated(16)
 	
-	return {metadata, numberedRegisters, instructions, fields, funcs, labelPositions, instructionPosition: 0}
+	return {source, metadata, numberedRegisters, instructions, fields, funcs, labelPositions, instructionPosition: 0}
 }
 
 //==========//
@@ -358,11 +365,13 @@ const loadElement = (program) => {
 		$$(".menuButton").forEach(e => e.classList.remove("highlight"))
 		button.classList.add("highlight")
 		dropperElement = id
+		$("#code").innerHTML = program.source
 	})
 	$("#menu").appendChild(button)
 	if (name === "Sand") {
 		dropperElement = id
 		button.classList.add("highlight")
+		$("#code").innerHTML = program.source
 	}
 }
 
