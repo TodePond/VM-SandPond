@@ -470,7 +470,10 @@ TERM.Symmetry = TERM.list([
 	TERM.string(`All`),
 	TERM.or([
 	TERM.string(`Flip_X`),
-	TERM.string(`Normal`)
+	TERM.or([
+	TERM.string(`Normal`),
+	TERM.string(`Flip_Y`)
+])
 ])
 ])
 ])

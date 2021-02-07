@@ -14,7 +14,7 @@ loadElement(Void)
 const Sand = transpile(`
 	.Name Sand
 	.FgColor #fc0
-	.Symmetries Normal, Flip_X
+	.Symmetries Normal, Flip_Y
 	
 	Equal R_0 #3 %Empty
 	Equal R_1 #3 %Water

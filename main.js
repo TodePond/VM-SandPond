@@ -92,7 +92,10 @@ const draw = () => {
 const randoRatio = (1 / 2**32) * SPACE_COUNT
 const RANDOM_COUNT = 16384
 const randos = new Uint32Array(RANDOM_COUNT)
-let r = RANDOM_COUNT
+let g_r = RANDOM_COUNT
+
+const symmRandos = new Uint32Array(RANDOM_COUNT)
+let g_sr = RANDOM_COUNT
 
 const update = () => {
 	
@@ -102,25 +105,44 @@ const update = () => {
 		i++ //placeholder - currently limiting program runs per tick, but it SHOULD limit instructions per tick
 		
 		// Get random space ID
-		if (r >= RANDOM_COUNT) {
+		if (g_r >= RANDOM_COUNT) {
 			crypto.getRandomValues(randos)
-			r = 0
+			g_r = 0
 		}
-		const id = Math.floor(randos[r] * randoRatio)
-		r++
+		const id = Math.floor(randos[g_r] * randoRatio)
+		g_r++
 		
 		// Get origin element
 		const element = spaces[id]
 		const program = loadedElementPrograms[element]
 		
+		// Get symmetry
+		if (g_sr >= RANDOM_COUNT) {
+			crypto.getRandomValues(symmRandos)
+			g_sr = 0
+		}
+		const symmetries = program.symmetries
+		const s = symmRandos[g_sr] % symmetries.length
+		g_sr++
+		const symmId = symmetries[s]
+		const symmMap = SYMMETRY_MAPS[symmId]
+		
+		// Get event window
+		const ew = getEventWindow(id, symmMap)
+		
 		// Fire event
-		const ew = getEventWindow(id)
 		loadedEventWindow = ew
 		run(program, Infinity)
 		
-		setEventWindow(id, ew)
+		setEventWindow(id, ew, symmMap)
 		
 	}
+}
+
+const SYMMETRY = {
+	Normal: ( x, y) => [ x, y],
+	Flip_X: ( x, y) => [-x, y],
+	Flip_Y: ( x, y) => [ x,-y],
 }
 
 const EVENT_WINDOW = [
@@ -167,10 +189,20 @@ const EVENT_WINDOW = [
 	[4, 0],
 ]
 
-const getEventWindow = (space) => {
+const SYMMETRY_MAPS = []
+const SYMMETRY_IDS = {}
+
+for (const name in SYMMETRY) {
+	const func = SYMMETRY[name]
+	const map = EVENT_WINDOW.map(([x, y]) => func(x, y))
+	const id = SYMMETRY_MAPS.push(map) - 1
+	SYMMETRY_IDS[name] = id
+}
+
+const getEventWindow = (space, map) => {
 	const ew = []
 	const [x, y] = getSpacePosition(space)
-	for (const [dx, dy] of EVENT_WINDOW) {
+	for (const [dx, dy] of map) {
 		const [ex, ey] = [x+dx, y+dy]
 		const element = $Space(ex, ey)
 		ew.push(element)
@@ -178,9 +210,9 @@ const getEventWindow = (space) => {
 	return ew
 }
 
-const setEventWindow = (space, ew) => {
+const setEventWindow = (space, ew, map) => {
 	const [x, y] = getSpacePosition(space)
-	for (const [dx, dy] of EVENT_WINDOW) {
+	for (const [dx, dy] of map) {
 		const [ex, ey] = [x+dx, y+dy]
 		const element = ew.shift(ew)
 		changeSpacePosition(ex, ey, element)
@@ -269,7 +301,7 @@ if (REBUILD) {
 	StringLiteral :: '"' (/[^"]/+)? '"'
 	`
 	cachedMotherTode += "\n" + MotherTode`
-	Symmetry :: "None" | "All" | "Flip_X" | "Normal"
+	Symmetry :: "None" | "All" | "Flip_X" | "Normal" | "Flip_Y"
 	Symmetries :: TwoSymmetries | Symmetry >> (ss) => ss.output.split(",").map(s => s.trim())
 	TwoSymmetries :: Symmetry "," [_] Symmetries
 	Site :: "#" IntLiteral >> ([_, n]) => "loadedEventWindow[" + n + "]"
@@ -328,7 +360,10 @@ const transpile = (source) => {
 	const funcs = instructions.map(instruction => new Function(instruction))
 	const numberedRegisters = [0].repeated(16)
 	
-	return {source, metadata, numberedRegisters, instructions, fields, funcs, labelPositions, instructionPosition: 0}
+	const symmetryNames = metadata.Symmetries === undefined? ["Normal"] : metadata.Symmetries
+	const symmetries = symmetryNames.map(name => SYMMETRY_IDS[name])
+	
+	return {source, symmetries, metadata, numberedRegisters, instructions, fields, funcs, labelPositions, instructionPosition: 0}
 }
 
 //==========//
