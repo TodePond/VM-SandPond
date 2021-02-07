@@ -1,4 +1,3 @@
-
 //========//
 // Engine //
 //========//
@@ -11,8 +10,13 @@ const PROGRAMS_PER_TICK = SPACE_COUNT // TODO: we should limit instructions, NOT
 const spaces = new Uint8Array(SPACE_COUNT)
 
 const $Space = (x, y) => {
+	if (x >= WORLD_SIZE) {
+		return loadedElementPositions["Void"]
+	}
+	if (y >= WORLD_SIZE) return loadedElementPositions["Void"]
+	if (y < 0) return loadedElementPositions["Void"]
+	if (x < 0) return loadedElementPositions["Void"]
 	const element = spaces[getSpaceId(x, y)]
-	if (element === undefined) return loadedElementPositions["Void"]
 	return element
 }
 const getSpaceId = (x, y) => y * WORLD_SIZE + x
@@ -62,7 +66,9 @@ canvas.on.touchmove(e => {
 
 const changeSpacePosition = (x, y, element) => {
 	const space = getSpaceId(x, y)
-	if (spaces[space] === element) return
+	const oldElement = $Space(x, y)
+	if (oldElement === element) return
+	if (oldElement === loadedElementPositions["Void"]) return
 	spaces[space] = element
 	const colour = loadedElementMetadata[element].FgColor
 	ctx.fillStyle = colour
@@ -199,7 +205,7 @@ for (const name in SYMMETRY) {
 	SYMMETRY_IDS[name] = id
 }
 
-const getEventWindow = (space, map) => {
+const getEventWindow = (space, map = EVENT_WINDOW) => {
 	const ew = []
 	const [x, y] = getSpacePosition(space)
 	for (const [dx, dy] of map) {
@@ -210,7 +216,7 @@ const getEventWindow = (space, map) => {
 	return ew
 }
 
-const setEventWindow = (space, ew, map) => {
+const setEventWindow = (space, ew, map = EVENT_WINDOW) => {
 	const [x, y] = getSpacePosition(space)
 	for (const [dx, dy] of map) {
 		const [ex, ey] = [x+dx, y+dy]
@@ -222,7 +228,7 @@ const setEventWindow = (space, ew, map) => {
 const tick = () => {
 	if (Mouse.down || Touches.length > 0) {
 		const [sx, sy] = [Math.floor(dropperX / SPACE_SIZE), Math.floor(dropperY / SPACE_SIZE)]
-		changeSpacePosition(sx, sy, dropperElement)
+		if (dropperElement !== undefined) changeSpacePosition(sx, sy, dropperElement)
 	}
 	update()
 	requestAnimationFrame(tick)
@@ -346,12 +352,14 @@ const transpile = (source) => {
 	const lines = strippedSource.split("\n")
 	const instructions = []
 	for (let i = 0; i < lines.length; i++) {
-		currentPosition = i
 		const line = lines[i]
 		const result = TERM.Line(line)
 		if (!result.success) throw new Error(`Failed to transpile line ${i}:\n\n${line}\n`)
 		const instruction = result.output
-		if (instruction !== "") instructions.push(instruction)
+		if (instruction !== "") {
+			instructions.push(instruction)
+			currentPosition++
+		}
 	}
 	
 	const labelPositions = {...currentLabelPositions}
@@ -431,6 +439,7 @@ const run = (program, count = 10) => {
 	loadedNumberedRegisters = numberedRegisters
 	if (funcs.length > 0) for (let i = 0; i < count; i++) {
 		const func = funcs[loadedInstructionPosition]
+		//if (program == Sand) print(func)
 		func()
 		loadedInstructionPosition++
 		if (loadedInstructionPosition >= funcs.length) {
