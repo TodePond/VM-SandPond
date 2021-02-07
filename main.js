@@ -35,6 +35,11 @@ document.body.appendChild(menu)
 const codeDisplay = HTML `<pre id="code"></pre>`
 codeDisplay.style["color"] = "white"
 codeDisplay.style["font-family"] = "UbuntuMono"
+codeDisplay.style["font-size"] = "larger"
+codeDisplay.style["position"] = "absolute"
+codeDisplay.style["top"] = "20px"
+codeDisplay.style["user-select"] = "none"
+codeDisplay.style["pointer-events"] = "none"
 document.body.appendChild(codeDisplay)
 
 let dropperElement = undefined
