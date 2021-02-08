@@ -38,11 +38,11 @@ TERM.Value = TERM.list([
 	TERM.or([
 	TERM.term("String"),
 	TERM.or([
-	TERM.term("Field"),
-	TERM.or([
 	TERM.term("Register"),
 	TERM.or([
 	TERM.term("Element"),
+	TERM.or([
+	TERM.term("SiteField"),
 	TERM.term("Site")
 ])
 ])
@@ -56,7 +56,7 @@ TERM.Destination = TERM.list([
 	TERM.or([
 	TERM.term("Register"),
 	TERM.or([
-	TERM.term("Field"),
+	TERM.term("SiteField"),
 	TERM.term("Site")
 ])
 ])
@@ -495,6 +495,16 @@ TERM.TwoSymmetries = TERM.list([
 ])),
 	TERM.term("Symmetries")
 ])
+TERM.SiteField = TERM.emit(
+	TERM.list([
+	TERM.term("Site"),
+	TERM.maybe(TERM.list([
+	TERM.gap
+])),
+	TERM.term("RelativeField")
+]),
+	([s, _, f]) => s + "." + f
+)
 TERM.Site = TERM.emit(
 	TERM.list([
 	TERM.string(`#`),
@@ -502,24 +512,13 @@ TERM.Site = TERM.emit(
 ]),
 	([_, n]) => "loadedEventWindow[" + n + "]"
 )
-TERM.Field = TERM.emit(
+TERM.RelativeField = TERM.emit(
 	TERM.list([
-	TERM.or([
-	TERM.term("AbsoluteField"),
-	TERM.term("RelativeField")
-])
+	TERM.string(`$`),
+	TERM.term("Name")
 ]),
-	() => { throw new Error("Accessing fields is unimplemented because I don't understand it yet") }
+	([_, n]) => n.output
 )
-TERM.AbsoluteField = TERM.list([
-	TERM.term("Register"),
-	TERM.string(`$`),
-	TERM.term("Name")
-])
-TERM.RelativeField = TERM.list([
-	TERM.string(`$`),
-	TERM.term("Name")
-])
 TERM.Register = TERM.list([
 	TERM.or([
 	TERM.term("NumberedRegister"),

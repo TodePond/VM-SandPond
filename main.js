@@ -216,7 +216,7 @@ const getEventWindow = (space, map = EVENT_WINDOW) => {
 	for (const [dx, dy] of map) {
 		const [ex, ey] = [x+dx, y+dy]
 		const element = $Space(ex, ey)
-		ew.push(element)
+		ew.push({type: element})
 	}
 	return ew
 }
@@ -225,7 +225,7 @@ const setEventWindow = (space, ew, map = EVENT_WINDOW) => {
 	const [x, y] = getSpacePosition(space)
 	for (const [dx, dy] of map) {
 		const [ex, ey] = [x+dx, y+dy]
-		const element = ew.shift(ew)
+		const element = ew.shift(ew).type
 		changeSpacePosition(ex, ey, element)
 	}
 }
@@ -265,8 +265,8 @@ if (REBUILD) {
 	cachedMotherTode += "\n" + MotherTode `
 	Line :: [_] Instruction [_] EOF >> ([_, i]) => i.output
 	Instruction :: Label | JumpFunction | Print | HeaderDeclaration | Function
-	Value :: UInt | SInt | Binary | String | Field | Register | Element | Site
-	Destination :: Register | Field | Site
+	Value :: UInt | SInt | Binary | String | Register | Element | SiteField | Site
+	Destination :: Register | SiteField | Site
 	`
 
 	cachedMotherTode += "\n" + MotherTode `
@@ -325,10 +325,9 @@ if (REBUILD) {
 	Symmetry :: "None" | "All" | "Flip_X" | "Normal" | "Flip_Y"
 	Symmetries :: TwoSymmetries | Symmetry >> (ss) => ss.output.split(",").map(s => s.trim())
 	TwoSymmetries :: Symmetry "," [_] Symmetries
+	SiteField :: Site [_] RelativeField >> ([s, _, f]) => s + "." + f
 	Site :: "#" IntLiteral >> ([_, n]) => "loadedEventWindow[" + n + "]"
-	Field :: AbsoluteField | RelativeField >> () => { throw new Error("Accessing fields is unimplemented because I don't understand it yet") }
-	AbsoluteField :: Register "$" Name
-	RelativeField :: "$" Name
+	RelativeField :: "$" Name >> ([_, n]) => n.output
 	Register :: NumberedRegister | NamedRegister
 	NumberedRegister :: "R_" IntLiteral >> ([_, n]) => "loadedNumberedRegisters[" + n + "]"
 	NamedRegister :: "R_SelfRaw" | "R_SelfType" | "R_SelfHeader" | "R_SelfChecksum" | "R_SelfData" | "R_UniformRandom" >> () => { throw new Error("Other registers are not implemented yet") }
@@ -347,6 +346,8 @@ if (REBUILD) {
 	`
 	cachedMotherTode += "\n}"
 	//cachedMotherTode = cachedMotherTode.replaceAll("`", "\\`")
+	
+	print(cachedMotherTode)
 }
 
 

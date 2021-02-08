@@ -17,16 +17,16 @@ const Sand = transpile(`
 	.Symmetries Normal, Flip_X
 	
 	fall:
-		Equal R_0 #3 %Empty
-		Equal R_1 #3 %Water
+		Equal R_0 #3$type %Empty
+		Equal R_1 #3$type %Water
 		Or R_2 R_1 R_0
 		JumpZero slide R_2
 			Swap #0 #3
 			Exit
 	
 	slide:
-		Equal R_0 #8 %Empty
-		Equal R_1 #8 %Water
+		Equal R_0 #8$type %Empty
+		Equal R_1 #8$type %Water
 		Or R_2 R_1 R_0
 		JumpZero exit R_2
 			Swap #0 #8
@@ -42,13 +42,13 @@ const Water = transpile(`
 	.Symmetries Normal, Flip_X
 	
 	fall:
-		Equal R_0 #3 %Empty
+		Equal R_0 #3$type %Empty
 		JumpZero slide R_0
 			Swap #0 #3
 			Exit
 	
 	slide:
-		Equal R_0 #4 %Empty
+		Equal R_0 #4$type %Empty
 		JumpZero exit R_0
 			Swap #0 #4
 			Exit
@@ -61,7 +61,7 @@ const Faller = transpile(`
 	.Name Faller
 	.FgColor #ff4646
 	
-	Equal R_0 #3 %Empty
+	Equal R_0 #3$type %Empty
 	JumpZero exit R_0
 	Swap #0 #3
 	exit:
