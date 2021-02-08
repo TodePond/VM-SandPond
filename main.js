@@ -459,12 +459,12 @@ const run = (program, count = 10) => {
 		loadedInstructionPosition++
 		if (loadedInstructionPosition >= funcs.length) {
 			loadedInstructionPosition = 0
+			loadedNumberedRegisters = [0].repeated(16) //Reset numbered registers?
 			break
-			//loadedNumberedRegisters = [0].repeated(16) //Reset numbered registers?
 		}
 	}
 	
-	program.instructionPosition = 0
+	//program.instructionPosition = 0
 	//program.numberedRegisters = [0].repeated(16)
 	
 	//program.instructionPosition = loadedInstructionPosition
@@ -483,8 +483,8 @@ const tinker = () => {
 	TERM.Binary("0b0111").d
 	TERM.Label("loop:").d
 	TERM.Jmp("Jmp loop").d
-	TERM.Symmetry("NONE").d
-	TERM.Symmetry("ALL").d
+	TERM.Symmetry("None").d
+	TERM.Symmetry("All").d
 	TERM.Site("#0").d
 	TERM.Site("#1").d
 	//TERM.Field("$active_count").d
@@ -492,7 +492,7 @@ const tinker = () => {
 	//TERM.FieldDeclaration(".Field active_count").d
 	//TERM.FieldDeclaration(".Field is_active 1").d
 	TERM.Element("%Empty").d
-	TERM.Symmetries("NORMAL, FLIPX").d
+	TERM.Symmetries("Normal, Flip_X").d
 
 	const hello = transpile(`
 		loop:
