@@ -151,9 +151,15 @@ const update = () => {
 }
 
 const SYMMETRY = {
-	Normal: ( x, y) => [ x, y],
-	Flip_X: ( x, y) => [-x, y],
-	Flip_Y: ( x, y) => [ x,-y],
+	Normal: (x, y) => [x, y],
+	Flip_Y_Swap_XY: (x, y) => [-y, x],
+	Flip_XY: (x, y) => [-x, -y],
+	Flip_X_Swap_XY: (x, y) => [y, -x],
+	
+	Swap_XY: (x, y) => [y, x],
+	
+	Flip_X: (x, y) => [-x, y],
+	Flip_Y: (x, y) => [x,-y],
 }
 
 const EVENT_WINDOW = [
@@ -322,7 +328,7 @@ if (REBUILD) {
 	StringLiteral :: '"' (/[^"]/+)? '"'
 	`
 	cachedMotherTode += "\n" + MotherTode`
-	Symmetry :: "None" | "All" | "Flip_X" | "Normal" | "Flip_Y"
+	Symmetry :: "None" | "All" | "Normal" | "Flip_Y_Swap_XY" | "Flip_X_Swap_XY" | "Flip_XY" | "Flip_X" | "Flip_Y"
 	Symmetries :: TwoSymmetries | Symmetry >> (ss) => ss.output.split(",").map(s => s.trim())
 	TwoSymmetries :: Symmetry "," [_] Symmetries
 	SiteField :: Site [_] RelativeField >> ([s, _, f]) => s + "." + f

@@ -68,4 +68,16 @@ const Faller = transpile(`
 `)
 loadElement(Faller)
 
+const Diffuser = transpile(`
+	.Name Diffuser
+	.FgColor #ff80ff
+	.Symmetries Normal, Flip_Y_Swap_XY, Flip_XY, Flip_X_Swap_XY
+	
+	Equal R_0 #3$type %Empty
+	JumpZero exit R_0
+	Swap #0 #3
+	exit:
+`)
+loadElement(Diffuser)
+
 start() // Start the world after loading elements
