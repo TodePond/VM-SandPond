@@ -152,12 +152,12 @@ const update = () => {
 
 const SYMMETRY = {
 	Normal: (x, y) => [x, y],
-	Flip_Y_Swap_XY: (x, y) => [-y, x],
+	R_000L: (x, y) => [x, y],
+	R_090L: (x, y) => [y, -x],
+	R_180L: (x, y) => [-x, -y],
+	R_270L: (x, y) => [-y, x],
+	
 	Flip_XY: (x, y) => [-x, -y],
-	Flip_X_Swap_XY: (x, y) => [y, -x],
-	
-	Swap_XY: (x, y) => [y, x],
-	
 	Flip_X: (x, y) => [-x, y],
 	Flip_Y: (x, y) => [x,-y],
 }
@@ -329,7 +329,7 @@ if (REBUILD) {
 	StringLiteral :: '"' (/[^"]/+)? '"'
 	`
 	cachedMotherTode += "\n" + MotherTode`
-	Symmetry :: "None" | "All" | "Normal" | "Flip_Y_Swap_XY" | "Flip_X_Swap_XY" | "Flip_XY" | "Flip_X" | "Flip_Y"
+	Symmetry :: "None" | "All" | "Normal" | "Flip_XY" | "Flip_X" | "Flip_Y" | "R_000L" | "R_090L" | "R_180L" | "R_270L"
 	Symmetries :: TwoSymmetries | Symmetry >> (ss) => ss.output.split(",").map(s => s.trim())
 	TwoSymmetries :: Symmetry "," [_] Symmetries
 	SiteField :: Site [_] RelativeField >> ([s, _, f]) => s + "." + f
