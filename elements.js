@@ -99,7 +99,11 @@ const Dropper = transpile(`
 	
 	Equal R_0 #3$type %Empty
 	JumpZero exit R_0
-	Copy #3$type #0$type
+	Swap #3$type #0$type
+	
+	Copy R_1 R_UniformRandom$int
+	Mod R_2 R_1 10
+	JumpNonZero exit R_2
 	Copy #0$type %Sand
 	exit:
 `)

@@ -276,9 +276,10 @@ if (REBUILD) {
 	`
 
 	cachedMotherTode += "\n" + MotherTode `
-	Function :: Copy | Swap | Equal | Negate | Not | Or | And | Add | Sub | Mul | Compare | Nop | Exit
+	Function :: Copy | Swap | Equal | Negate | Not | Or | And | Add | Sub | Mul | Mod | Compare | Nop | Exit
 	Copy :: "Copy" [_] Destination [_] Value >> ([c, g1, l, g2, v]) => l + " = " + v
 	Add :: "Add" [_] Destination [_] Value [_] Value >> ([a, g1, dst, g2, lhs, g3, rhs]) => dst + " = " + lhs + " + " + rhs
+	Mod :: "Mod" [_] Destination [_] Value [_] Value >> ([a, g1, dst, g2, lhs, g3, rhs]) => dst + " = " + lhs + " % " + rhs
 	Sub :: "Sub" [_] Destination [_] Value [_] Value >> ([a, g1, dst, g2, lhs, g3, rhs]) => dst + " = " + lhs + " - " + rhs
 	Mul :: "Mul" [_] Destination [_] Value [_] Value >> ([a, g1, dst, g2, lhs, g3, rhs]) => dst + " = " + lhs + " * " + rhs
 	Equal :: "Equal" [_] Destination [_] Value [_] Value >> ([a, g1, dst, g2, lhs, g3, rhs]) => dst + " = Number(" + lhs + " == " + rhs + ")"
@@ -334,10 +335,11 @@ if (REBUILD) {
 	SiteField :: Site [_] RelativeField >> ([s, _, f]) => s + "." + f
 	Site :: "#" IntLiteral >> ([_, n]) => "loadedEventWindow[" + n + "]"
 	RelativeField :: "$" Name >> ([_, n]) => n.output
-	Register :: NumberedRegister | NamedRegister
+	Register :: NumberedRegister | RandomRegisterField | RandomRegister
 	NumberedRegister :: "R_" IntLiteral >> ([_, n]) => "loadedNumberedRegisters[" + n + "]"
-	NamedRegister :: "R_SelfRaw" | "R_SelfType" | "R_SelfHeader" | "R_SelfChecksum" | "R_SelfData" | "R_UniformRandom" >> () => { throw new Error("Other registers are not implemented yet") }
-	Name :: /[A-Za-z_]/+
+	RandomRegister :: "R_UniformRandom" >> () => { throw new Error("Random not supported yet. Please use placeholder '$i32' field")}
+	RandomRegisterField :: "R_UniformRandom" [_] "$" Name >> ([r, _, d, name]) => "getLoadedRando('" + name + "')"
+	Name :: /[A-Za-z0-9_]/+
 	Element :: "%" Name >> ([_, n]) => "loadedElementPositions['" + n + "']"
 	`
 
@@ -450,6 +452,22 @@ const loadElement = (program) => {
 		button.classList.add("highlight")
 		$("#code").innerHTML = program.source
 	}
+}
+
+const i32Randos = new Uint32Array(RANDOM_COUNT)
+let g_i32r = RANDOM_COUNT
+const getLoadedRando = (type) => {
+	if (type === "int") {
+		if (g_i32r >= RANDOM_COUNT) {
+			crypto.getRandomValues(i32Randos)
+			g_i32r = 0
+		}
+		const result = i32Randos[g_i32r]
+		g_i32r++
+		return result
+	}
+	
+	throw new Error("Unrecognised random type: " + type)
 }
 
 const run = (program, count = 10) => {

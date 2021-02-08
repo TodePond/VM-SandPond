@@ -83,10 +83,13 @@ TERM.Function = TERM.list([
 	TERM.or([
 	TERM.term("Mul"),
 	TERM.or([
+	TERM.term("Mod"),
+	TERM.or([
 	TERM.term("Compare"),
 	TERM.or([
 	TERM.term("Nop"),
 	TERM.term("Exit")
+])
 ])
 ])
 ])
@@ -131,6 +134,24 @@ TERM.Add = TERM.emit(
 	TERM.term("Value")
 ]),
 	([a, g1, dst, g2, lhs, g3, rhs]) => dst + " = " + lhs + " + " + rhs
+)
+TERM.Mod = TERM.emit(
+	TERM.list([
+	TERM.string(`Mod`),
+	TERM.maybe(TERM.list([
+	TERM.gap
+])),
+	TERM.term("Destination"),
+	TERM.maybe(TERM.list([
+	TERM.gap
+])),
+	TERM.term("Value"),
+	TERM.maybe(TERM.list([
+	TERM.gap
+])),
+	TERM.term("Value")
+]),
+	([a, g1, dst, g2, lhs, g3, rhs]) => dst + " = " + lhs + " % " + rhs
 )
 TERM.Sub = TERM.emit(
 	TERM.list([
@@ -531,7 +552,10 @@ TERM.RelativeField = TERM.emit(
 TERM.Register = TERM.list([
 	TERM.or([
 	TERM.term("NumberedRegister"),
-	TERM.term("NamedRegister")
+	TERM.or([
+	TERM.term("RandomRegisterField"),
+	TERM.term("RandomRegister")
+])
 ])
 ])
 TERM.NumberedRegister = TERM.emit(
@@ -541,29 +565,25 @@ TERM.NumberedRegister = TERM.emit(
 ]),
 	([_, n]) => "loadedNumberedRegisters[" + n + "]"
 )
-TERM.NamedRegister = TERM.emit(
+TERM.RandomRegister = TERM.emit(
 	TERM.list([
-	TERM.or([
-	TERM.string(`R_SelfRaw`),
-	TERM.or([
-	TERM.string(`R_SelfType`),
-	TERM.or([
-	TERM.string(`R_SelfHeader`),
-	TERM.or([
-	TERM.string(`R_SelfChecksum`),
-	TERM.or([
-	TERM.string(`R_SelfData`),
 	TERM.string(`R_UniformRandom`)
-])
-])
-])
-])
-])
 ]),
-	() => { throw new Error("Other registers are not implemented yet") }
+	() => { throw new Error("Random not supported yet. Please use placeholder '$i32' field")}
+)
+TERM.RandomRegisterField = TERM.emit(
+	TERM.list([
+	TERM.string(`R_UniformRandom`),
+	TERM.maybe(TERM.list([
+	TERM.gap
+])),
+	TERM.string(`$`),
+	TERM.term("Name")
+]),
+	([r, _, d, name]) => "getLoadedRando('" + name + "')"
 )
 TERM.Name = TERM.list([
-	TERM.many(TERM.regexp(/[A-Za-z_]/))
+	TERM.many(TERM.regexp(/[A-Za-z0-9_]/))
 ])
 TERM.Element = TERM.emit(
 	TERM.list([

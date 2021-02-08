@@ -18,7 +18,7 @@
 	<script>
 	
 		const urlParams = new URLSearchParams(window.location.search)
-		const REBUILD = urlParams.get("r")?.as(Boolean)
+		const REBUILD = !!(urlParams.get("r")?.as(Number))
 		
 	</script>
 	<script src="cache.js"></script>
