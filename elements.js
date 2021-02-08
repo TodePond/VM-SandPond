@@ -116,7 +116,7 @@ const DReg = transpile(`
 	
 	spawn_dreg:
 		Equal R_0 #3$type %Empty
-		JumpZero exit R_0
+		JumpZero eat_dreg R_0
 		
 		Mod R_0 R_UniformRandom$int 1000
 		JumpNonZero spawn_res R_0
