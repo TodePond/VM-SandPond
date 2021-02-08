@@ -131,7 +131,7 @@ const DReg = transpile(`
 	
 	eat_dreg:
 		Equal R_0 #3$type %DReg
-		JumpZero exit R_0
+		JumpZero eat_anything R_0
 		
 		Mod R_0 R_UniformRandom$int 10
 		JumpNonZero exit R_0
