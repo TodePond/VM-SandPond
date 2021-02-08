@@ -80,7 +80,6 @@ const Diffuser = transpile(`
 `)
 loadElement(Diffuser)
 
-
 const Forkbomb = transpile(`
 	.Name Forkbomb
 	.FgColor #000
@@ -92,5 +91,18 @@ const Forkbomb = transpile(`
 	exit:
 `)
 loadElement(Forkbomb)
+
+const Dropper = transpile(`
+	.Name Dropper
+	.FgColor #00cccc
+	.Symmetries Normal, Flip_Y_Swap_XY, Flip_XY, Flip_X_Swap_XY
+	
+	Equal R_0 #3$type %Empty
+	JumpZero exit R_0
+	Copy #3$type #0$type
+	Copy #0$type %Sand
+	exit:
+`)
+loadElement(Dropper)
 
 start() // Start the world after loading elements
